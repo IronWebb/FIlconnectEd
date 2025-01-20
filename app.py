@@ -2,24 +2,38 @@ from flask import Flask, jsonify, send_file, request
 from mediapipe_model_maker import gesture_recognizer
 import os
 import requests
-import tensorflow as tf
+import zipfile
+import tempfile
+import shutil
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Dropbox direct download URL (you can use it as-is for direct access)
+# Dropbox direct download URL
 DATASET_URL = "https://www.dropbox.com/scl/fo/kp6gjrwc86dkx0ont30z3/ANa8AsZsx0h6i0NUxvpEoWk?rlkey=9r6y5d1fpv7xqklnpowsnfzu6&dl=1"
-DATASET_PATH = "gesture_dataset"  # Direct access path to external storage
 
-# Function to fetch dataset from Dropbox (no need to unzip)
+# Function to download and extract dataset to a temporary directory
 def load_dataset_from_dropbox():
     print("Fetching dataset from Dropbox...")
-
     response = requests.get(DATASET_URL, stream=True)
     if response.status_code == 200:
-        # You can directly process the data here without storing it locally
-        # For example, stream it into memory or into a temporary folder
-        print("Dataset fetched successfully.")
+        # Create a temporary directory to store the dataset
+        temp_dir = tempfile.mkdtemp()
+
+        # Save the downloaded zip file to the temporary directory
+        dataset_zip_path = os.path.join(temp_dir, "gesture_dataset.zip")
+        with open(dataset_zip_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+
+        # Extract the zip file into the temporary directory
+        with zipfile.ZipFile(dataset_zip_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir)
+        
+        # Return the path to the extracted dataset
+        extracted_dataset_path = os.path.join(temp_dir, "gesture_dataset")
+        return extracted_dataset_path
     else:
         raise Exception(f"Failed to fetch dataset from Dropbox. Status code: {response.status_code}")
 
@@ -30,16 +44,15 @@ def home():
 @app.route('/train', methods=['GET'])
 def train_model():
     try:
-        # Fetch dataset directly from Dropbox
-        load_dataset_from_dropbox()
+        # Fetch dataset directly from Dropbox and extract to a temporary directory
+        dataset_path = load_dataset_from_dropbox()
 
-        # Load and preprocess dataset (adjust to your structure)
-        # Here we assume dataset files are directly accessible
-        labels = [i for i in os.listdir(DATASET_PATH) if os.path.isdir(os.path.join(DATASET_PATH, i))]
+        # Load and preprocess dataset from the temporary directory
+        labels = [i for i in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, i))]
         print(f"Labels: {labels}")
 
         data = gesture_recognizer.Dataset.from_folder(
-            dirname=DATASET_PATH,
+            dirname=dataset_path,
             hparams=gesture_recognizer.HandDataPreprocessingParams()
         )
         train_data, rest_data = data.split(0.8)
