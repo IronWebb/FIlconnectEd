@@ -6,6 +6,9 @@ import zipfile
 import tensorflow as tf
 import shutil
 
+# Disable GPU support (if not needed)
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU usage in TensorFlow
+
 # Initialize Flask app
 app = Flask(__name__)
 
