@@ -2,4 +2,3 @@ flask
 mediapipe_model_maker
 requests
 tensorflow
-shutil
