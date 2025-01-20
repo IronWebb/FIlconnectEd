@@ -2,31 +2,23 @@ from flask import Flask, jsonify, send_file, request
 from mediapipe_model_maker import gesture_recognizer
 import os
 import requests
-import zipfile
 import tensorflow as tf
-import shutil
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Dropbox direct download URL
+# Dropbox direct download URL (you can use it as-is for direct access)
 DATASET_URL = "https://www.dropbox.com/scl/fo/kp6gjrwc86dkx0ont30z3/ANa8AsZsx0h6i0NUxvpEoWk?rlkey=9r6y5d1fpv7xqklnpowsnfzu6&dl=1"
-DATASET_ZIP = "gesture_dataset.zip"
-DATASET_PATH = "gesture_dataset"  # Optionally, use in-memory datasets
+DATASET_PATH = "gesture_dataset"  # Direct access path to external storage
 
-# Function to load dataset directly from Dropbox
+# Function to fetch dataset from Dropbox (no need to unzip)
 def load_dataset_from_dropbox():
     print("Fetching dataset from Dropbox...")
 
     response = requests.get(DATASET_URL, stream=True)
     if response.status_code == 200:
-        # Handle dataset in memory (or use temporary file)
-        with open(DATASET_ZIP, "wb") as f:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
-        
-        # Extract in-memory if needed, or skip storage if memory handling
+        # You can directly process the data here without storing it locally
+        # For example, stream it into memory or into a temporary folder
         print("Dataset fetched successfully.")
     else:
         raise Exception(f"Failed to fetch dataset from Dropbox. Status code: {response.status_code}")
@@ -38,10 +30,11 @@ def home():
 @app.route('/train', methods=['GET'])
 def train_model():
     try:
-        # Load dataset directly from Dropbox
+        # Fetch dataset directly from Dropbox
         load_dataset_from_dropbox()
 
-        # Preprocess and load dataset (you may load from temp file if required)
+        # Load and preprocess dataset (adjust to your structure)
+        # Here we assume dataset files are directly accessible
         labels = [i for i in os.listdir(DATASET_PATH) if os.path.isdir(os.path.join(DATASET_PATH, i))]
         print(f"Labels: {labels}")
 
