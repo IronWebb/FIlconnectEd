@@ -18,6 +18,10 @@ DATASET_ZIP = "/mnt/data/gesture_dataset.zip"
 
 # Function to download and extract dataset
 def download_and_prepare_dataset():
+    # Ensure the target directory exists
+    if not os.path.exists("/mnt/data"):
+        os.makedirs("/mnt/data")
+
     # Remove existing dataset and zip file if present
     if os.path.exists(DATASET_PATH):
         print("Existing dataset found. Removing...")
@@ -39,6 +43,7 @@ def download_and_prepare_dataset():
         print("Dataset ready.")
     else:
         raise Exception(f"Failed to download dataset. Status code: {response.status_code}")
+
 
 @app.route('/')
 def home():
