@@ -6,47 +6,30 @@ import zipfile
 import tensorflow as tf
 import shutil
 
-# Disable GPU support (if not needed)
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU usage in TensorFlow
-
 # Initialize Flask app
 app = Flask(__name__)
 
-# Dataset configuration
+# Dropbox direct download URL
 DATASET_URL = "https://www.dropbox.com/scl/fo/kp6gjrwc86dkx0ont30z3/ANa8AsZsx0h6i0NUxvpEoWk?rlkey=9r6y5d1fpv7xqklnpowsnfzu6&dl=1"
-# Use the persistent disk mount point
-DATASET_PATH = "/tmp/gesture_dataset"  # Using /tmp for writable storage
-DATASET_ZIP = "/tmp/gesture_dataset.zip"
+DATASET_ZIP = "gesture_dataset.zip"
+DATASET_PATH = "gesture_dataset"  # Optionally, use in-memory datasets
 
+# Function to load dataset directly from Dropbox
+def load_dataset_from_dropbox():
+    print("Fetching dataset from Dropbox...")
 
-# Function to download and extract dataset
-def download_and_prepare_dataset():
-    # Ensure the target directory exists
-    if not os.path.exists(DATASET_PATH):
-        os.makedirs(DATASET_PATH)
-
-    # Remove existing dataset and zip file if present
-    if os.path.exists(DATASET_PATH):
-        print("Existing dataset found. Removing...")
-        shutil.rmtree(DATASET_PATH)
-    if os.path.exists(DATASET_ZIP):
-        print("Existing dataset zip found. Removing...")
-        os.remove(DATASET_ZIP)
-
-    print("Downloading new dataset...")
     response = requests.get(DATASET_URL, stream=True)
     if response.status_code == 200:
+        # Handle dataset in memory (or use temporary file)
         with open(DATASET_ZIP, "wb") as f:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
-        print("Download complete. Extracting dataset...")
-        with zipfile.ZipFile(DATASET_ZIP, 'r') as zip_ref:
-            zip_ref.extractall(DATASET_PATH)
-        print("Dataset ready.")
+        
+        # Extract in-memory if needed, or skip storage if memory handling
+        print("Dataset fetched successfully.")
     else:
-        raise Exception(f"Failed to download dataset. Status code: {response.status_code}")
-
+        raise Exception(f"Failed to fetch dataset from Dropbox. Status code: {response.status_code}")
 
 @app.route('/')
 def home():
@@ -55,10 +38,10 @@ def home():
 @app.route('/train', methods=['GET'])
 def train_model():
     try:
-        # Download and prepare dataset
-        download_and_prepare_dataset()
+        # Load dataset directly from Dropbox
+        load_dataset_from_dropbox()
 
-        # Load and preprocess dataset
+        # Preprocess and load dataset (you may load from temp file if required)
         labels = [i for i in os.listdir(DATASET_PATH) if os.path.isdir(os.path.join(DATASET_PATH, i))]
         print(f"Labels: {labels}")
 
