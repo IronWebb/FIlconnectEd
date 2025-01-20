@@ -11,8 +11,10 @@ app = Flask(__name__)
 
 # Dataset configuration
 DATASET_URL = "https://www.dropbox.com/scl/fo/kp6gjrwc86dkx0ont30z3/ANa8AsZsx0h6i0NUxvpEoWk?rlkey=9r6y5d1fpv7xqklnpowsnfzu6&dl=1"
-DATASET_ZIP = "gesture_dataset.zip"
-DATASET_PATH = "gesture_dataset"
+# Use the persistent disk mount point
+DATASET_PATH = "/mnt/data/gesture_dataset"  # Example, change as needed
+DATASET_ZIP = "/mnt/data/gesture_dataset.zip"
+
 
 # Function to download and extract dataset
 def download_and_prepare_dataset():
